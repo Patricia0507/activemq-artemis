@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.jms.example;
 
+import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
@@ -28,6 +29,7 @@ import javax.jms.TextMessage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.Topic;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 public class MessageListenerExample {
@@ -35,33 +37,33 @@ public class MessageListenerExample {
    public static void main(final String[] args) throws Exception {
       Connection connection = null;
       try {
+         ConnectionFactory cf = new ActiveMQConnectionFactory("failover://(tcp://localhost:5672,tcp://localhost:61616)");
 
-         ConnectionFactory cf = new ActiveMQConnectionFactory();
-
-         connection = cf.createConnection();
+         connection = cf.createConnection("username","password");
 
          Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-         Queue queue = session.createQueue("exampleQueue");
+         Topic queue = session.createTopic("topic.name.here");
 
-         int nMessages = 1000;
+         int nMessages = 5;
 
+        //this is obviously contrived
          CountDownLatch latch = new CountDownLatch(nMessages);
          MessageConsumer messageConsumer = session.createConsumer(queue);
          messageConsumer.setMessageListener(new LocalListener(latch));
 
          connection.start();
 
-         MessageProducer producer = session.createProducer(queue);
+//         MessageProducer producer = session.createProducer(queue);
 
-         for (int i = 0; i < 1000; i++) {
-            TextMessage message = session.createTextMessage("This is a text message " + i);
-
-            System.out.println("Sent message: " + message.getText());
-
-            producer.send(message);
-         }
-
+//         for (int i = 0; i < 1000; i++) {
+//            TextMessage message = session.createTextMessage("This is a text message " + i);
+//
+//            System.out.println("Sent message: " + message.getText());
+//
+//            producer.send(message);
+//         }
+//
          if (!latch.await(5, TimeUnit.SECONDS)) {
             throw new RuntimeException("listener didn't receive all the messages");
          }
@@ -87,7 +89,18 @@ public class MessageListenerExample {
       public void onMessage(Message message) {
          latch.countDown();
          try {
-            System.out.println("Received " + ((TextMessage) message).getText());
+           //some messages are byte messages even though they contain text
+            if (message instanceof BytesMessage)
+            {
+              BytesMessage byteMessage = (BytesMessage) message;
+              byte[] byteData = null;
+              byteData = new byte[(int) byteMessage.getBodyLength()];
+              byteMessage.readBytes(byteData);
+              byteMessage.reset();
+              System.out.println("Received " + new String(byteData));
+         }else if(message instanceof TextMessage) {
+              System.out.println("Received " + ((TextMessage) message).getText());
+         }
          } catch (Exception e) {
             e.printStackTrace();
          }

@@ -61,6 +61,21 @@ under the License.
          </exclusions>
       </dependency>
       <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>activemq-pool</artifactId>
+         <version>${activemq5-version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.apache.geronimo.specs</groupId>
+               <artifactId>geronimo-jms_1.1_spec</artifactId>
+            </exclusion>
+            <exclusion>
+               <groupId>org.apache.geronimo.specs</groupId>
+               <artifactId>geronimo-j2ee-management_1.1_spec</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
          <groupId>org.slf4j</groupId>
          <artifactId>slf4j-nop</artifactId>
       </dependency>
